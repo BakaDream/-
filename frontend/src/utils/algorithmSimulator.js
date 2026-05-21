@@ -2161,6 +2161,10 @@ function parseFindMode(rawMode) {
   return mode === '全部' ? 'all' : 'first'
 }
 
+function clampLinearSlot(rawIndex, maxIndex) {
+  return Math.max(0, Math.min(rawIndex, maxIndex))
+}
+
 function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 'linear-list-basic') {
   const state = ensureLinearListState(currentState)
   const tracer = makeTracer(state)
@@ -2204,57 +2208,55 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
     case 'insert': {
       ensureLinearData(state)
       const [positionRaw, value] = parsePair(input, action.defaultInput)
-      const position = Math.max(1, Math.min(positionRaw, state.items.length + 1))
-      const index = position - 1
+      const index = clampLinearSlot(positionRaw, state.items.length)
       if (state.items.length >= state.capacity) {
         tracer.addBlock('顺序表已达到固定表长，插入失败', [7, 8], { result: `当前长度 ${state.items.length} / 表长 ${state.capacity}` })
         break
       }
-      tracer.addBlock('解析插入位置与元素值', [7, 8], { result: `准备在第 ${position} 个位置插入 ${value}` })
+      tracer.addBlock('解析插入位置与元素值', [7, 8], { result: `准备在显示序号 ${index} 处插入 ${value}` })
       for (let cursor = 0; cursor < index; cursor += 1) {
-        tracer.addBlock(`经过第 ${cursor + 1} 个元素 ${state.items[cursor]}`, [9, 10], {
-          result: `正在寻找第 ${position} 个位置`,
+        tracer.addBlock(`经过序号 ${cursor} 的元素 ${state.items[cursor]}`, [9, 10], {
+          result: `正在定位显示序号 ${index}`,
           highlightIndices: [cursor],
         })
       }
-      tracer.addBlock(`定位到第 ${position} 个位置，准备后移元素`, [11, 12], {
+      tracer.addBlock(`定位到显示序号 ${index}，准备后移元素`, [11, 12], {
         result: index === state.items.length ? '插入位置在表尾，无需移动现有元素' : '将从表尾开始依次后移元素',
         highlightIndices: [index],
       })
       state.items.push(state.items[state.items.length - 1])
       for (let cursor = state.items.length - 2; cursor >= index; cursor -= 1) {
         state.items[cursor + 1] = state.items[cursor]
-        tracer.addBlock(`将位置 ${cursor + 1} 的元素后移到位置 ${cursor + 2}`, [13, 14], {
+        tracer.addBlock(`将序号 ${cursor} 的元素后移到序号 ${cursor + 1}`, [13, 14], {
           result: `元素 ${state.items[cursor + 1]} 向后移动一格`,
           highlightIndices: [cursor, cursor + 1],
         })
       }
       state.items[index] = value
       tracer.addBlock('在顺序表中写入新元素', [16, 17], {
-        result: `已在第 ${position} 个位置插入 ${value}，表长变为 ${state.items.length}`,
+        result: `已在显示序号 ${index} 处插入 ${value}，表长变为 ${state.items.length}`,
         highlightIndices: [index],
       })
       break
     }
     case 'delete': {
       ensureLinearData(state)
-      const position = Math.max(1, Math.min(parseSingleNumber(input, 1), state.items.length || 1))
-      const index = Math.max(0, position - 1)
-      tracer.addBlock('解析待删除位置', [7, 8], { result: `准备删除第 ${position} 个位置的元素` })
+      const index = clampLinearSlot(parseSingleNumber(input, 0), Math.max(state.items.length - 1, 0))
+      tracer.addBlock('解析待删除位置', [7, 8], { result: `准备删除显示序号 ${index} 的元素` })
       for (let cursor = 0; cursor <= index && cursor < state.items.length; cursor += 1) {
-        tracer.addBlock(`扫描到第 ${cursor + 1} 个元素 ${state.items[cursor]}`, [9, 10], {
-          result: cursor === index ? '定位到待删除元素' : `继续查找到第 ${position} 个位置`,
+        tracer.addBlock(`扫描到序号 ${cursor} 的元素 ${state.items[cursor]}`, [9, 10], {
+          result: cursor === index ? '定位到待删除元素' : `继续查找到显示序号 ${index}`,
           highlightIndices: [cursor],
         })
       }
       const removed = state.items[index]
-      tracer.addBlock(`删除第 ${position} 个位置上的元素 ${removed}`, [11, 12], {
+      tracer.addBlock(`删除显示序号 ${index} 上的元素 ${removed}`, [11, 12], {
         result: '删除目标元素后，后续元素需要依次前移',
         highlightIndices: [index],
       })
       for (let cursor = index; cursor < state.items.length - 1; cursor += 1) {
         state.items[cursor] = state.items[cursor + 1]
-        tracer.addBlock(`将位置 ${cursor + 2} 的元素前移到位置 ${cursor + 1}`, [13, 14], {
+        tracer.addBlock(`将序号 ${cursor + 1} 的元素前移到序号 ${cursor}`, [13, 14], {
           result: `元素 ${state.items[cursor]} 向前移动一格`,
           highlightIndices: [cursor, cursor + 1],
         })
@@ -2357,9 +2359,8 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
       ensureLinearData(state)
       const parts = input.split(',').map(s => s.trim())
       const target = parseSingleNumber(parts[0], state.items[0] ?? 0)
-      const mode = parseFindMode(parts[1])
       const matches = []
-      tracer.addBlock('执行顺序查找', [18, 20], { result: `准备查找 ${target}（${mode === 'all' ? '全部匹配' : '首个匹配'}）` })
+      tracer.addBlock('执行顺序查找', [18, 20], { result: `准备查找 ${target} 的全部匹配位置` })
       for (let index = 0; index < state.items.length; index += 1) {
         const matched = state.items[index] === target
         tracer.addBlock(`检查位置 ${index} 的元素 ${state.items[index]}`, [22, 24], {
@@ -2370,18 +2371,15 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
         if (matched) {
           matches.push(index)
           tracer.addBlock(`记录匹配位置 ${index}`, [22, 24], {
-            result: mode === 'all' ? `当前已找到：${matches.join(', ')}` : `首个命中位置 ${index}`,
+            result: `当前已找到：${matches.join(', ')}`,
             highlightIndices: [index],
             pointers: [makePointer(index, 'hit', '#22c55e')],
           })
-          if (mode !== 'all') break
         }
       }
       tracer.addBlock('顺序查找结束', [25, 26], {
         result: matches.length
-          ? mode === 'all'
-            ? `元素 ${target} 的全部位置：${matches.join(', ')}`
-            : `元素 ${target} 的首个位置：${matches[0]}`
+          ? `元素 ${target} 的全部位置：${matches.join(', ')}`
           : `未找到 ${target}`,
         highlightIndices: matches,
       })
@@ -2390,22 +2388,27 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
     case 'reverse-search': {
       ensureLinearData(state)
       const target = parseSingleNumber(input, state.items[state.items.length - 1] ?? 0)
-      tracer.addBlock('执行逆序查找', [18, 20], { result: `准备从尾到头查找 ${target}` })
-      let found = -1
+      tracer.addBlock('执行逆序查找', [18, 20], { result: `准备从尾到头查找 ${target} 的全部匹配位置` })
+      const matches = []
       for (let index = state.items.length - 1; index >= 0; index -= 1) {
+        const matched = state.items[index] === target
         tracer.addBlock(`检查位置 ${index} 的元素 ${state.items[index]}`, [22, 24], {
-          result: state.items[index] === target ? `找到目标 ${target}` : `当前位置不是 ${target}`,
+          result: matched ? `位置 ${index} 命中 ${target}` : `当前位置不是 ${target}`,
           highlightIndices: [index],
-          pointers: [makePointer(index, 'i', state.items[index] === target ? '#22c55e' : '#ef4444')],
+          pointers: [makePointer(index, 'i', matched ? '#22c55e' : '#ef4444')],
         })
-        if (state.items[index] === target) {
-          found = index
-          break
+        if (matched) {
+          matches.push(index)
+          tracer.addBlock(`记录匹配位置 ${index}`, [22, 24], {
+            result: `当前已找到：${matches.join(', ')}`,
+            highlightIndices: [index],
+            pointers: [makePointer(index, 'hit', '#22c55e')],
+          })
         }
       }
       tracer.addBlock('逆序查找结束', [25, 26], {
-        result: found >= 0 ? `元素 ${target} 位于位置 ${found}` : `未找到 ${target}`,
-        highlightIndices: found >= 0 ? [found] : [],
+        result: matches.length ? `元素 ${target} 的全部位置：${matches.join(', ')}` : `未找到 ${target}`,
+        highlightIndices: matches,
       })
       break
     }
@@ -2416,6 +2419,7 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
       let left = 0
       let right = state.items.length - 1
       let found = -1
+      const matches = []
       tracer.addBlock('执行折半查找', [21, 23], { result: `排序后序列：${state.items.join(', ')}` })
       while (left <= right) {
         const mid = Math.floor((left + right) / 2)
@@ -2436,27 +2440,38 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
         if (state.items[mid] < target) left = mid + 1
         else right = mid - 1
       }
+      if (found >= 0) {
+        let start = found
+        let end = found
+        while (start - 1 >= 0 && state.items[start - 1] === target) start -= 1
+        while (end + 1 < state.items.length && state.items[end + 1] === target) end += 1
+        for (let index = start; index <= end; index += 1) matches.push(index)
+        tracer.addBlock(`向左右扩展重复值区间 [${start}, ${end}]`, [27, 29], {
+          result: `目标 ${target} 的重复值位置：${matches.join(', ')}`,
+          highlightIndices: matches,
+          pointers: matches.map((index) => makePointer(index, 'hit', '#22c55e')),
+        })
+      }
       tracer.addBlock('折半查找结束', [30, 31], {
-        result: found >= 0 ? `元素 ${target} 位于位置 ${found}` : `未找到 ${target}`,
-        highlightIndices: found >= 0 ? [found] : [],
-        pointers: found >= 0 ? [makePointer(found, 'M', '#22c55e')] : [],
+        result: matches.length ? `元素 ${target} 的全部位置：${matches.join(', ')}` : `未找到 ${target}`,
+        highlightIndices: matches,
+        pointers: matches.map((index) => makePointer(index, 'hit', '#22c55e')),
       })
       break
     }
     case 'search-by-pos':
     case 'list-search-by-pos': {
       ensureLinearData(state)
-      const pos = Math.max(1, Math.min(parseSingleNumber(input, 1), state.items.length))
-      const index = Math.max(0, pos - 1)
-      tracer.addBlock(`准备查找第 ${pos} 个位置的元素`, [6, 7], { result: `目标位置为第 ${pos} 个` })
+      const index = clampLinearSlot(parseSingleNumber(input, 0), Math.max(state.items.length - 1, 0))
+      tracer.addBlock(`准备查找显示序号 ${index} 的元素`, [6, 7], { result: `目标显示序号为 ${index}` })
       for (let cursor = 0; cursor <= index; cursor += 1) {
-        tracer.addBlock(`移动到第 ${cursor + 1} 个位置`, [9, 10], {
-          result: cursor === index ? '定位到目标位置' : `继续查找到第 ${pos} 个位置`,
+        tracer.addBlock(`移动到显示序号 ${cursor}`, [9, 10], {
+          result: cursor === index ? '定位到目标位置' : `继续查找到显示序号 ${index}`,
           highlightIndices: [cursor],
           pointers: [makePointer(cursor, 'i', cursor === index ? '#22c55e' : '#ef4444')],
         })
       }
-      tracer.addBlock(`第 ${pos} 个位置的元素为 ${state.items[index]}`, [13, 14], {
+      tracer.addBlock(`显示序号 ${index} 的元素为 ${state.items[index]}`, [13, 14], {
         result: `查找到的元素值：${state.items[index]}`,
         highlightIndices: [index],
       })
@@ -2467,10 +2482,9 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
       ensureLinearData(state)
       const parts = input.split(',').map(s => s.trim())
       const target = parseSingleNumber(parts[0], state.items[0] ?? 0)
-      const mode = parseFindMode(parts[1])
       const matches = []
       tracer.addBlock(`准备按值查找 ${target}`, [6, 7], {
-        result: `在 ${state.items.length} 个元素中查找（${mode === 'all' ? '全部匹配' : '首个匹配'}）`,
+        result: `在 ${state.items.length} 个元素中查找全部匹配`,
       })
       for (let i = 0; i < state.items.length; i += 1) {
         const matched = state.items[i] === target
@@ -2481,14 +2495,16 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
         })
         if (matched) {
           matches.push(i)
-          if (mode !== 'all') break
+          tracer.addBlock(`记录匹配位置 ${i}`, [9, 10], {
+            result: `当前已找到：${matches.join(', ')}`,
+            highlightIndices: [i],
+            pointers: [makePointer(i, 'hit', '#22c55e')],
+          })
         }
       }
       tracer.addBlock('按值查找结束', [12, 13], {
         result: matches.length
-          ? mode === 'all'
-            ? `在位置 ${matches.join(', ')} 找到 ${target}`
-            : `在位置 ${matches[0]} 找到 ${target}`
+          ? `在位置 ${matches.join(', ')} 找到 ${target}`
           : `未找到 ${target}`,
         highlightIndices: matches,
       })
