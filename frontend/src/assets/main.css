@@ -1,0 +1,9 @@
+﻿@import './base.css';
+
+body {
+  line-height: 1.5;
+}
+
+#app {
+  min-height: 100vh;
+}

@@ -1,0 +1,49 @@
+=========================================
+数据结构可视化系统 - 运行说明
+=========================================
+
+这是一个单文件夹发布包。
+进入解压后的根目录即可看到：
+- frontend
+- backend
+- start.ps1
+
+推荐方式：PowerShell 一键启动
+
+1. 打开 PowerShell，进入本文件夹
+   cd "你的解压目录\数据结构可视化系统"
+
+2. 执行一键启动
+   powershell -ExecutionPolicy Bypass -File .\start.ps1
+
+脚本会自动做这些事：
+- 检查 Node.js / npm
+- 检查 frontend 依赖，不完整就执行 npm install
+- 检查 Python
+- 检查 backend 的 Flask 依赖，不完整就安装 backend\requirements.txt
+- 分别打开 frontend 和 backend 两个运行窗口
+
+手动启动方式：
+
+1. 启动 frontend
+   cd .\frontend
+   npm install
+   npm run dev
+
+2. 启动 backend
+   cd ..\backend
+   python -m pip install -r requirements.txt
+   python app.py
+
+打开地址：
+- frontend：http://localhost:5173
+- backend：http://localhost:5000
+- AI 健康检查：http://localhost:5000/api/ai/health
+
+Windows 常见坑：
+- 不要把别的电脑上的 node_modules 直接复制过来。
+- 如果报错：Cannot find module '@rollup/rollup-win32-x64-msvc'
+  请删除“frontend\node_modules”后重新 npm install。
+- 建议 Node.js 20 或 22。
+- 建议 Python 3.10+。
+- 如果网页能打开但 AI 显示离线，通常是 backend 没启动或 backend 窗口报错。
