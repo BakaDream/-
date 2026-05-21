@@ -10,8 +10,19 @@
       </RouterLink>
 
       <nav class="nav-area">
-        <section v-for="group in navigationGroups" :key="group.key" class="nav-group">
-          <button class="group-button" type="button" @click="toggleGroup(group.key)" :title="isCollapsed ? group.label : ''">
+        <section
+          v-for="group in navigationGroups"
+          :key="group.key"
+          class="nav-group"
+          :class="[`group-${group.key}`, { 'group-active': activeGroupKeys.has(group.key) }]"
+        >
+          <button
+            class="group-button"
+            :class="{ active: activeGroupKeys.has(group.key) }"
+            type="button"
+            @click="toggleGroup(group.key)"
+            :title="isCollapsed ? group.label : ''"
+          >
             <span class="group-icon">{{ group.icon }}</span>
             <span class="group-label">{{ group.label }}</span>
             <span class="group-arrow">{{ openGroups.has(group.key) ? '−' : '+' }}</span>
@@ -148,7 +159,8 @@ function toggleSubgroup(key) {
   height: 100vh;
   min-height: 100vh;
   padding: 14px 8px;
-  background: linear-gradient(180deg, #10213e 0%, #0a162a 100%);
+  background:
+    linear-gradient(180deg, rgba(16, 33, 62, 0.98) 0%, rgba(10, 22, 42, 0.99) 100%);
   color: #e8f0fb;
   box-shadow: 8px 0 30px rgba(8, 20, 40, 0.28);
   overflow: hidden;
@@ -163,7 +175,7 @@ function toggleSubgroup(key) {
   display: flex;
   gap: 10px;
   align-items: center;
-  padding: 8px 6px 14px;
+  padding: 9px 7px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -171,11 +183,12 @@ function toggleSubgroup(key) {
   color: inherit;
   text-decoration: none;
   border-radius: 14px;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .brand-link:hover {
   background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(126, 220, 255, 0.12);
   transform: translateY(-1px);
 }
 
@@ -186,11 +199,12 @@ function toggleSubgroup(key) {
   height: 36px;
   flex-shrink: 0;
   border-radius: 12px;
-  background: linear-gradient(135deg, #46a2ff 0%, #4be1c3 100%);
+  background: linear-gradient(135deg, #5ec8ff 0%, #4be1c3 100%);
   color: #07223d;
   font-weight: 800;
   font-size: 12px;
   letter-spacing: 0.08em;
+  box-shadow: 0 12px 24px rgba(75, 225, 195, 0.2);
 }
 
 .brand-text {
@@ -229,19 +243,51 @@ function toggleSubgroup(key) {
 }
 
 .nav-group + .nav-group {
-  margin-top: 8px;
+  margin-top: 10px;
+}
+
+.nav-group {
+  --group-accent: #7edcff;
+  --group-accent-soft: rgba(126, 220, 255, 0.16);
+  --group-accent-border: rgba(126, 220, 255, 0.34);
+  position: relative;
+}
+
+.group-linked-list {
+  --group-accent: #6fe7c6;
+  --group-accent-soft: rgba(111, 231, 198, 0.16);
+  --group-accent-border: rgba(111, 231, 198, 0.34);
+}
+
+.group-stack-queue {
+  --group-accent: #ffd166;
+  --group-accent-soft: rgba(255, 209, 102, 0.15);
+  --group-accent-border: rgba(255, 209, 102, 0.3);
+}
+
+.group-tree {
+  --group-accent: #b9a5ff;
+  --group-accent-soft: rgba(185, 165, 255, 0.16);
+  --group-accent-border: rgba(185, 165, 255, 0.32);
+}
+
+.group-graph {
+  --group-accent: #ff9d7a;
+  --group-accent-soft: rgba(255, 157, 122, 0.15);
+  --group-accent-border: rgba(255, 157, 122, 0.32);
 }
 
 .group-button {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(126, 220, 255, 0.22);
+  border: 1px solid rgba(126, 220, 255, 0.16);
   border-radius: 12px;
   padding: 9px 8px;
   background:
-    linear-gradient(135deg, rgba(34, 77, 126, 0.9) 0%, rgba(17, 39, 73, 0.92) 100%);
+    linear-gradient(135deg, rgba(30, 62, 105, 0.78) 0%, rgba(17, 39, 73, 0.92) 100%);
   color: #f2f7ff;
   cursor: pointer;
   font-size: 13px;
@@ -252,12 +298,50 @@ function toggleSubgroup(key) {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 10px 22px rgba(5, 14, 28, 0.22);
+  isolation: isolate;
+}
+
+.group-button::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: var(--group-accent);
+  opacity: 0.78;
+}
+
+.group-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 24px 0, var(--group-accent-soft), transparent 38%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: -1;
 }
 
 .group-button:hover {
   background:
     linear-gradient(135deg, rgba(44, 96, 154, 0.98) 0%, rgba(21, 49, 91, 0.96) 100%);
-  border-color: rgba(126, 220, 255, 0.38);
+  border-color: var(--group-accent-border);
+}
+
+.group-button:hover::after,
+.group-button.active::after {
+  opacity: 1;
+}
+
+.group-button.active {
+  border-color: var(--group-accent-border);
+  background:
+    linear-gradient(135deg, rgba(38, 79, 126, 0.96) 0%, rgba(20, 49, 88, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 12px 24px rgba(5, 14, 28, 0.28),
+    0 0 0 1px var(--group-accent-soft);
 }
 
 .group-icon {
@@ -267,8 +351,8 @@ function toggleSubgroup(key) {
   height: 24px;
   flex-shrink: 0;
   border-radius: 8px;
-  background: rgba(126, 220, 255, 0.16);
-  color: #a9e8ff;
+  background: var(--group-accent-soft);
+  color: var(--group-accent);
   font-weight: 700;
   text-align: center;
 }
@@ -294,11 +378,22 @@ function toggleSubgroup(key) {
 }
 
 .group-items {
+  position: relative;
   display: grid;
   gap: 6px;
-  padding: 6px 4px 0 4px;
+  padding: 7px 4px 0 12px;
   overflow: hidden;
   transition: opacity 0.2s ease, max-height 0.25s ease;
+}
+
+.group-items::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  bottom: 2px;
+  width: 1px;
+  background: linear-gradient(180deg, var(--group-accent-border), rgba(126, 220, 255, 0.02));
 }
 
 .nav-subgroup {
@@ -337,12 +432,12 @@ function toggleSubgroup(key) {
 }
 
 .level-one-link {
-  width: calc(100% - 12px);
+  width: calc(100% - 10px);
   min-height: 34px;
-  margin-left: 12px;
+  margin-left: 10px;
   padding-left: 14px;
-  border-left: 2px solid rgba(126, 220, 255, 0.28);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-left: 2px solid var(--group-accent-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.062) 0%, rgba(255, 255, 255, 0.032) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 6px 14px rgba(10, 22, 42, 0.14);
 }
 
@@ -355,9 +450,9 @@ function toggleSubgroup(key) {
 .nav-link.level-two-link {
   --level-accent: rgba(126, 220, 255, 0.34);
   position: relative;
-  width: calc(100% - 24px);
+  width: calc(100% - 22px);
   min-height: 32px;
-  margin-left: 24px;
+  margin-left: 22px;
   padding-left: 18px;
   border: 1px solid rgba(126, 220, 255, 0.08);
   border-left: 2px solid rgba(126, 220, 255, 0.18);
@@ -486,9 +581,14 @@ function toggleSubgroup(key) {
 
 .nav-link.level-one-link,
 .subgroup-button.level-one-link {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.045) 100%);
-  border-color: rgba(126, 220, 255, 0.16);
-  border-left-color: rgba(126, 220, 255, 0.42);
+  width: calc(100% - 10px);
+  min-height: 34px;
+  margin-left: 10px;
+  padding-left: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.084) 0%, rgba(255, 255, 255, 0.045) 100%);
+  border-color: rgba(126, 220, 255, 0.14);
+  border-left-color: var(--group-accent-border);
   color: rgba(232, 240, 251, 0.9);
   font-weight: 600;
 }
@@ -582,12 +682,38 @@ function toggleSubgroup(key) {
 }
 
 .content-area {
+  position: relative;
   min-width: 0;
   height: 100vh;
   min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  border-left: 1px solid rgba(47, 119, 235, 0.08);
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.9) 0%, rgba(237, 243, 251, 0.92) 100%);
+}
+
+.content-area::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 0 230px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(47, 119, 235, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(47, 119, 235, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.26;
+  z-index: 0;
+}
+
+.content-area > :deep(*) {
+  position: relative;
+  z-index: 1;
+}
+
+.collapsed .content-area::before {
+  inset: 0 0 0 52px;
 }
 
 @media (max-width: 720px) {
@@ -606,6 +732,10 @@ function toggleSubgroup(key) {
   .content-area {
     height: auto;
     overflow: visible;
+  }
+
+  .content-area::before {
+    display: none;
   }
 
   .collapse-btn {

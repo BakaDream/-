@@ -87,7 +87,13 @@ const studySteps = [
       </div>
 
       <div class="module-grid">
-        <RouterLink v-for="card in moduleCards" :key="card.key" class="module-card" :to="card.path">
+        <RouterLink
+          v-for="card in moduleCards"
+          :key="card.key"
+          class="module-card"
+          :class="`module-${card.key}`"
+          :to="card.path"
+        >
           <div class="module-topline">
             <span class="module-icon">{{ card.icon }}</span>
             <span class="module-count">{{ card.count }} 个页面</span>
@@ -107,6 +113,9 @@ const studySteps = [
   min-height: 100%;
   padding: 22px;
   color: #172741;
+  background:
+    radial-gradient(circle at 12% 0, rgba(47, 119, 235, 0.12), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
 }
 
 .home-hero {
@@ -122,7 +131,7 @@ const studySteps = [
 .feature-card,
 .module-card {
   border: 1px solid rgba(51, 101, 164, 0.14);
-  border-radius: 8px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 16px 36px rgba(21, 47, 84, 0.08);
 }
@@ -190,7 +199,17 @@ const studySteps = [
 }
 
 .hero-panel {
+  position: relative;
   padding: 24px;
+  overflow: hidden;
+}
+
+.hero-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #2f77eb 0%, #4be1c3 100%);
 }
 
 .panel-title {
@@ -285,11 +304,46 @@ const studySteps = [
 }
 
 .module-card {
+  --module-accent: #2f77eb;
+  --module-soft: rgba(47, 119, 235, 0.12);
+  position: relative;
   min-height: 210px;
   padding: 18px;
   color: inherit;
   text-decoration: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+
+.module-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 4px;
+  border-radius: 0 999px 999px 0;
+  background: var(--module-accent);
+}
+
+.module-linked-list {
+  --module-accent: #13a67a;
+  --module-soft: rgba(19, 166, 122, 0.12);
+}
+
+.module-stack-queue {
+  --module-accent: #c97a15;
+  --module-soft: rgba(201, 122, 21, 0.13);
+}
+
+.module-tree {
+  --module-accent: #7665d8;
+  --module-soft: rgba(118, 101, 216, 0.13);
+}
+
+.module-graph {
+  --module-accent: #de5a4f;
+  --module-soft: rgba(222, 90, 79, 0.12);
 }
 
 .module-topline {
@@ -305,8 +359,8 @@ const studySteps = [
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: #e7f3ff;
-  color: #236bd2;
+  background: var(--module-soft);
+  color: var(--module-accent);
   font-weight: 800;
 }
 

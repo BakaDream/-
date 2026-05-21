@@ -81,31 +81,6 @@
               </button>
             </div>
 
-            <!-- 排序模式切换 -->
-            <div v-if="isSortAction" class="mode-switcher">
-              <span class="mode-label">执行模式</span>
-              <div class="mode-pills">
-                <button
-                  type="button"
-                  class="mode-pill"
-                  :class="{ active: sortMode === 'step' }"
-                  @click="sortMode = 'step'"
-                >每一步</button>
-                <button
-                  type="button"
-                  class="mode-pill"
-                  :class="{ active: sortMode === 'round' }"
-                  @click="sortMode = 'round'"
-                >每轮</button>
-                <button
-                  type="button"
-                  class="mode-pill"
-                  :class="{ active: sortMode === 'all' }"
-                  @click="sortMode = 'all'"
-                >直接完成</button>
-              </div>
-            </div>
-
             <div v-if="isBstDepthTraverse" class="mode-switcher">
               <span class="mode-label">遍历模式</span>
               <div class="mode-pills">
@@ -293,7 +268,6 @@ const displayState = ref({ meta: {} })
 const isPlaying = ref(false)
 const codeBodyRef = ref(null)
 const codeCardRef = ref(null)
-const sortMode = ref('step') // 'step' | 'round' | 'all'
 const treeTraverseMode = ref('pre')
 const historyStack = ref([]) // 操作历史栈（用于撤销）
 
@@ -969,19 +943,7 @@ const currentStruct = computed(() => {
   )
 })
 
-const filteredTraces = computed(() => {
-  if (!isSortAction.value || sortMode.value === 'all') return traces.value
-  if (sortMode.value === 'step') {
-    return traces.value.filter(t => !t.round)
-  }
-  // 'round' mode: show traces up to and including each round-end marker
-  const result = []
-  for (const t of traces.value) {
-    result.push(t)
-    if (t.round && String(t.round).startsWith('round-end')) break
-  }
-  return result
-})
+const filteredTraces = computed(() => traces.value)
 const resultText = computed(() => displayState.value?.meta?.result || '等待执行')
 const statusText = computed(() => currentAction.value?.label || '未选择操作')
 const progressPercent = computed(() => (filteredTraces.value.length ? ((traceIndex.value + 1) / filteredTraces.value.length) * 100 : 0))
@@ -1238,24 +1200,41 @@ onUnmounted(() => {
 
 <style scoped>
 .page-shell {
-  padding: 14px;
+  min-height: 100%;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0) 42%),
+    radial-gradient(circle at 18% 0, rgba(47, 119, 235, 0.1), transparent 28%);
 }
 
 .main-column {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .page-header {
+  position: relative;
   display: grid;
   gap: 10px;
-  padding: 14px 16px;
-  border-radius: 14px;
+  padding: 16px 18px 16px 20px;
+  border-radius: 12px;
   background:
     radial-gradient(circle at top right, rgba(56, 167, 255, 0.22), transparent 32%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(247, 251, 255, 0.86) 100%);
   border: 1px solid rgba(16, 33, 62, 0.08);
   box-shadow: 0 18px 44px rgba(17, 39, 70, 0.08);
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg, #2f77eb 0%, #4be1c3 100%);
 }
 
 .hero-copy {
@@ -1373,19 +1352,29 @@ onUnmounted(() => {
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
-  gap: 12px;
+  gap: 14px;
   align-items: start;
 }
 
 .workspace-card {
+  position: relative;
   display: grid;
   gap: 10px;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(249, 252, 255, 0.96) 100%);
   border: 1px solid rgba(16, 33, 62, 0.08);
   box-shadow: 0 18px 40px rgba(17, 39, 70, 0.08);
   min-height: max-content;
+  overflow: hidden;
+}
+
+.workspace-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #2f77eb 0%, #4be1c3 48%, rgba(47, 119, 235, 0) 100%);
 }
 
 .code-card {
@@ -1396,7 +1385,7 @@ onUnmounted(() => {
   min-height: calc(100vh - 28px);
   max-height: calc(100vh - 28px);
   min-width: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   overscroll-behavior: contain;
   background:
@@ -1478,8 +1467,9 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: 10px;
   background: linear-gradient(135deg, rgba(47, 119, 235, 0.08), rgba(75, 225, 195, 0.12));
+  border: 1px solid rgba(47, 119, 235, 0.1);
 }
 
 .result-message {
@@ -1517,6 +1507,10 @@ onUnmounted(() => {
 .controls-panel {
   display: grid;
   gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(16, 33, 62, 0.026);
+  border: 1px solid rgba(16, 33, 62, 0.055);
 }
 
 .mode-switcher {
@@ -1590,8 +1584,9 @@ onUnmounted(() => {
 
 .action-button {
   padding: 6px 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #f3f7fc;
+  border: 1px solid rgba(16, 33, 62, 0.06);
   color: #16345d;
   font-weight: 700;
   font-size: 12px;
@@ -1607,8 +1602,9 @@ onUnmounted(() => {
   display: grid;
   gap: 6px;
   padding: 10px;
-  border-radius: 12px;
-  background: rgba(16, 33, 62, 0.04);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(16, 33, 62, 0.065);
 }
 
 .input-hint {
@@ -1828,8 +1824,9 @@ onUnmounted(() => {
   display: grid;
   gap: 8px;
   padding: 10px;
-  border-radius: 12px;
-  background: rgba(16, 33, 62, 0.04);
+  border-radius: 10px;
+  background: rgba(16, 33, 62, 0.035);
+  border: 1px solid rgba(16, 33, 62, 0.055);
 }
 
 .trace-list {
