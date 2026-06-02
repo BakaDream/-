@@ -3706,7 +3706,7 @@ function runCircularLinkedList(action, rawInput, currentState) {
 
   return { state, traces: tracer.done() }
 }
-function runBinaryTree(action, rawInput, currentState) {
+function runBinaryTree(action, rawInput, currentState, mode = 'pre') {
   const state = ensureBinaryTreeState(currentState)
   const tracer = makeTracer(state)
   const input = normalizeInput(rawInput, action.defaultInput)
@@ -3903,15 +3903,16 @@ function runBinaryTree(action, rawInput, currentState) {
       })
       break
     }
-    case 'preorder-traverse':
-      emitTraversal('前序遍历', [42, 43], [25, 26], [40, 41], traverseTreePreOrder)
+    case 'depth-traverse': {
+      const modeMap = {
+        pre: { label: '前序遍历', visit: traverseTreePreOrder },
+        in: { label: '中序遍历', visit: traverseTreeInOrder },
+        post: { label: '后序遍历', visit: traverseTreePostOrder },
+      }
+      const selectedMode = modeMap[mode] || modeMap.pre
+      emitTraversal(selectedMode.label, [42, 43], [25, 26], [40, 41], selectedMode.visit)
       break
-    case 'inorder-traverse':
-      emitTraversal('中序遍历', [42, 43], [25, 26], [40, 41], traverseTreeInOrder)
-      break
-    case 'postorder-traverse':
-      emitTraversal('后序遍历', [42, 43], [25, 26], [40, 41], traverseTreePostOrder)
-      break
+    }
     case 'update': {
       ensureDefaultTree()
       const [oldValue, newValue] = normalizeInput(input, action.defaultInput).split(/[,\s，]+/).map((item) => String(item).trim())
@@ -4650,7 +4651,7 @@ export function runOperation({ page, action, input, state, capacity, mode }) {
     case 'circular-linked-list':
       return runCircularLinkedList(action, input, state)
     case 'binary-tree':
-      return runBinaryTree(action, input, state)
+      return runBinaryTree(action, input, state, mode)
     case 'bst':
       return runBstLike(action, input, state, false, mode)
     case 'avl':

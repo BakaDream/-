@@ -81,7 +81,7 @@
               </button>
             </div>
 
-            <div v-if="isBstDepthTraverse" class="mode-switcher">
+            <div v-if="isTreeDepthTraverse" class="mode-switcher">
               <span class="mode-label">遍历模式</span>
               <div class="mode-pills">
                 <button
@@ -370,7 +370,7 @@ function isLineDimmed(lineIndex) {
 }
 const currentMessage = computed(() => currentTrace.value?.message || '等待执行')
 const isSortAction = computed(() => currentAction.value?.mode === 'sort')
-const isBstDepthTraverse = computed(() => page.value.key === 'bst' && currentAction.value?.key === 'depth-traverse')
+const isTreeDepthTraverse = computed(() => ['binary-tree', 'bst'].includes(page.value.key) && currentAction.value?.key === 'depth-traverse')
 const isSharedStackPage = computed(() => page.value.key === 'shared-stack')
 const sharedActionRows = computed(() => {
   const rows = [
@@ -1119,7 +1119,7 @@ function runCurrentAction() {
 
   const beforeState = clone(committedState.value ?? createInitialState(page.value.key))
   const actionKey = currentAction.value?.key
-  const nonMutatingActions = ['search-by-pos', 'search-by-val', 'sequential-search', 'binary-search', 'peek', 'front', 'rear', 'is-empty', 'is-empty-1', 'is-empty-2', 'is-full', 'traverse', 'forward-traverse', 'reverse-traverse', 'level-traverse', 'preorder-traverse', 'inorder-traverse', 'postorder-traverse', 'count', 'depth']
+  const nonMutatingActions = ['search-by-pos', 'search-by-val', 'sequential-search', 'binary-search', 'peek', 'front', 'rear', 'is-empty', 'is-empty-1', 'is-empty-2', 'is-full', 'traverse', 'forward-traverse', 'reverse-traverse', 'level-traverse', 'depth-traverse', 'count', 'depth']
   const shouldCommit =
     (!page.value.navGroupKey?.includes('linear-list-sort') || ['create', 'random', 'list-random'].includes(actionKey) || isSortAction.value) &&
     !nonMutatingActions.includes(actionKey)
