@@ -146,6 +146,27 @@ function buildMatrix(vertices, edges, weights = {}) {
   return matrix
 }
 
+function buildDirectedMatrix(vertices, edges, weights = {}) {
+  const map = Object.fromEntries(vertices.map((vertex, index) => [vertex, index]))
+  const matrix = Array.from({ length: vertices.length }, () => Array(vertices.length).fill(0))
+  edges.forEach(([source, target]) => {
+    const row = map[source]
+    const col = map[target]
+    if (row === undefined || col === undefined) return
+    matrix[row][col] = weights[`${source},${target}`] || 1
+  })
+  return matrix
+}
+
+function buildDirectedAdjacency(vertices, edges) {
+  const adjacency = Object.fromEntries(vertices.map((vertex) => [vertex, []]))
+  edges.forEach(([source, target]) => {
+    if (adjacency[source] && !adjacency[source].includes(target)) adjacency[source].push(target)
+  })
+  Object.values(adjacency).forEach((neighbors) => neighbors.sort())
+  return adjacency
+}
+
 function matrixToEdges(vertices, matrix) {
   const edges = []
   for (let row = 0; row < matrix.length; row += 1) {
@@ -164,6 +185,14 @@ function buildAdjacency(vertices, edges) {
   })
   Object.values(adjacency).forEach((neighbors) => neighbors.sort())
   return adjacency
+}
+
+function normalizeDirectedWeights(edges, weights = {}) {
+  const next = {}
+  edges.forEach(([from, to]) => {
+    next[`${from},${to}`] = weights[`${from},${to}`] || weights[`${to},${from}`] || 1
+  })
+  return next
 }
 
 function adjacencyToEdges(vertices, adjacency) {
@@ -227,6 +256,15 @@ function parseGraphInput(raw, fallback = 'A,B,C,D,E | A-B:1,A-C:4,A-D:3,B-D:2,C-
       }
     })
   return vertices.length ? { vertices, edges, weights } : defaultGraphData()
+}
+
+function parseDirectedGraphInput(raw, fallback = 'A,B,C,D,E | A-B,A-C,B-D,C-D,D-E') {
+  const parsed = parseGraphInput(raw, fallback)
+  return {
+    vertices: parsed.vertices,
+    edges: parsed.edges,
+    weights: normalizeDirectedWeights(parsed.edges, parsed.weights),
+  }
 }
 
 function parseMatrixInput(raw, fallback = 'A,B,C,D | 0 1 1 1;1 0 1 0;1 1 0 1;1 0 1 0') {
@@ -623,6 +661,15 @@ function applyGraphData(state, graphData) {
   state.adjacency = buildAdjacency(state.vertices, state.edges)
 }
 
+function applyDirectedGraphData(state, graphData) {
+  state.vertices = [...graphData.vertices]
+  state.edges = graphData.edges.map(([from, to]) => [from, to])
+  state.weights = normalizeDirectedWeights(state.edges, graphData.weights || {})
+  state.matrix = buildDirectedMatrix(state.vertices, state.edges, state.weights)
+  state.adjacency = buildDirectedAdjacency(state.vertices, state.edges)
+  state.directed = true
+}
+
 function createRandomGraphData(vertexCount = 5, weighted = true) {
   const count = Math.max(3, Math.min(Number(vertexCount) || 5, 8))
   const vertices = Array.from({ length: count }, (_, index) => String.fromCharCode(65 + index))
@@ -648,6 +695,27 @@ function createRandomGraphData(vertexCount = 5, weighted = true) {
     const from = vertices[Math.floor(Math.random() * count)]
     const to = vertices[Math.floor(Math.random() * count)]
     addEdge(from, to)
+  }
+  return { vertices, edges, weights }
+}
+
+function createRandomDagData(vertexCount = 5) {
+  const count = Math.max(3, Math.min(Number(vertexCount) || 5, 8))
+  const vertices = Array.from({ length: count }, (_, index) => String.fromCharCode(65 + index))
+  const edges = []
+  const weights = {}
+  for (let to = 1; to < count; to += 1) {
+    const from = Math.floor(Math.random() * to)
+    edges.push([vertices[from], vertices[to]])
+    weights[`${vertices[from]},${vertices[to]}`] = Math.floor(Math.random() * 9) + 1
+  }
+  for (let from = 0; from < count - 1; from += 1) {
+    for (let to = from + 1; to < count; to += 1) {
+      if (Math.random() < 0.22 && !edges.some(([a, b]) => a === vertices[from] && b === vertices[to])) {
+        edges.push([vertices[from], vertices[to]])
+        weights[`${vertices[from]},${vertices[to]}`] = Math.floor(Math.random() * 9) + 1
+      }
+    }
   }
   return { vertices, edges, weights }
 }
@@ -728,6 +796,8 @@ function createInitialState(pageKey) {
     case 'graph-list':
     case 'graph-traversal':
     case 'graph-mst':
+    case 'graph-topological':
+    case 'graph-shortest-path':
       return ensureGraphState(null)
     case 'linear-list':
     case 'linear-list-basic':
@@ -1497,6 +1567,10 @@ function runGraphMatrix(action, rawInput, currentState) {
   const tracer = makeTracer(state)
   state.meta = { ...(state.meta || {}), actionKey: action.key }
 
+  if (action.key === 'matrix-dfs' || action.key === 'matrix-bfs') {
+    return runGraphTraversal(action, rawInput, state)
+  }
+
   if (action.key === 'build-matrix') {
     const parsed = parseGraphInput(rawInput, action.defaultInput)
     state.vertices = []
@@ -1661,6 +1735,15 @@ function runGraphList(action, rawInput, currentState) {
   const tracer = makeTracer(state)
   state.meta = { ...(state.meta || {}), actionKey: action.key }
 
+  if (action.key === 'list-dfs' || action.key === 'list-bfs') {
+    const traversalAction = {
+      ...action,
+      key: action.key === 'list-dfs' ? 'dfs' : 'bfs',
+      label: action.label,
+    }
+    return runGraphTraversal(traversalAction, rawInput, state)
+  }
+
   if (action.key === 'build-list') {
     const parsed = parseGraphInput(rawInput, action.defaultInput)
     state.vertices = []
@@ -1824,7 +1907,7 @@ function runGraphTraversal(action, rawInput, currentState) {
   const discovered = new Set()
   const order = []
   const isDfs = ['dfs', 'matrix-dfs'].includes(action.key)
-  const modeLabel = action.key === 'matrix-dfs' ? '邻接矩阵 DFS' : action.key === 'matrix-bfs' ? '邻接矩阵 BFS' : action.key === 'dfs' ? '深度优先搜索' : '广度优先搜索'
+  const modeLabel = action.label || (action.key === 'matrix-dfs' ? '邻接矩阵 DFS' : action.key === 'matrix-bfs' ? '邻接矩阵 BFS' : action.key === 'dfs' ? '深度优先搜索' : '广度优先搜索')
   const vertexIndex = Object.fromEntries(state.vertices.map((vertex, index) => [vertex, index]))
   const matrixHighlights = (from, to) => {
     const row = vertexIndex[from]
@@ -1900,6 +1983,106 @@ function runGraphTraversal(action, rawInput, currentState) {
   state.adjacency = adjacency
   return { state, traces: tracer.done() }
 }
+
+function runGraphTopological(action, rawInput, currentState) {
+  const state = ensureGraphState(currentState)
+  const tracer = makeTracer(state)
+  state.meta = { ...(state.meta || {}), actionKey: action.key }
+  const input = normalizeInput(rawInput, action.defaultInput)
+
+  if (action.key === 'create') {
+    const graphData = parseDirectedGraphInput(input, action.defaultInput)
+    applyDirectedGraphData(state, graphData)
+    tracer.addBlock('读取顶点数组和有向边并创建图', [1, 3], {
+      result: `已创建 ${state.vertices.length} 个顶点、${state.edges.length} 条有向边`,
+      highlightNodes: state.vertices,
+    })
+    tracer.addBlock('同步生成有向邻接矩阵和邻接表', [4, 5], {
+      result: `顶点数组：${state.vertices.join(' -> ')}`,
+      highlightNodes: state.vertices,
+    })
+    return { state, traces: tracer.done() }
+  }
+
+  if (action.key === 'random') {
+    const graphData = createRandomDagData(parseSingleNumber(input, 5))
+    applyDirectedGraphData(state, graphData)
+    tracer.addBlock('随机生成有向无环图的顶点数组', [1, 3], {
+      result: `随机得到 ${state.vertices.length} 个顶点`,
+      highlightNodes: state.vertices,
+    })
+    tracer.addBlock('按顶点顺序生成只从前向后的有向边', [4, 5], {
+      result: `当前共有 ${state.edges.length} 条有向边`,
+      highlightNodes: state.vertices,
+    })
+    return { state, traces: tracer.done() }
+  }
+
+  if (input.includes('|')) {
+    applyDirectedGraphData(state, parseDirectedGraphInput(input, action.defaultInput))
+  } else if (!state.directed) {
+    applyDirectedGraphData(state, parseDirectedGraphInput('', 'A,B,C,D,E | A-B,A-C,B-D,C-D,D-E'))
+  } else {
+    state.matrix = buildDirectedMatrix(state.vertices, state.edges, state.weights)
+    state.adjacency = buildDirectedAdjacency(state.vertices, state.edges)
+  }
+
+  const indegree = Object.fromEntries(state.vertices.map((vertex) => [vertex, 0]))
+  state.edges.forEach(([from, to]) => {
+    if (indegree[to] !== undefined) indegree[to] += 1
+  })
+  let queue = state.vertices.filter((vertex) => indegree[vertex] === 0)
+  const order = []
+  tracer.addBlock('统计所有顶点入度', [6, 8], {
+    result: state.vertices.map((vertex) => `${vertex}:${indegree[vertex]}`).join('，'),
+    highlightNodes: [...queue],
+  })
+  tracer.addBlock('将入度为 0 的顶点加入队列', [9, 10], {
+    result: queue.length ? `初始队列：${queue.join(' -> ')}` : '没有入度为 0 的顶点，图中可能存在环',
+    highlightNodes: [...queue],
+  })
+
+  while (queue.length) {
+    const vertex = queue.shift()
+    order.push(vertex)
+    tracer.addBlock(`出队并访问顶点 ${vertex}`, [11, 12], {
+      result: `当前拓扑序列：${order.join(' -> ')}`,
+      highlightNodes: [vertex],
+      traversalOrder: [...order],
+    })
+    ;(state.adjacency[vertex] || []).forEach((neighbor) => {
+      indegree[neighbor] -= 1
+      tracer.addBlock(`删除有向边 ${vertex} -> ${neighbor}，更新 ${neighbor} 的入度`, [13, 16], {
+        result: `${neighbor} 的入度变为 ${indegree[neighbor]}`,
+        highlightNodes: [vertex, neighbor],
+        highlightEdges: [[vertex, neighbor]],
+        traversalOrder: [...order],
+      })
+      if (indegree[neighbor] === 0) {
+        queue.push(neighbor)
+        tracer.addBlock(`顶点 ${neighbor} 入度为 0，加入队列`, [17, 18], {
+          result: `当前队列：${queue.join(' -> ') || '空'}`,
+          highlightNodes: [neighbor],
+          traversalOrder: [...order],
+        })
+      }
+    })
+  }
+
+  const hasCycle = order.length !== state.vertices.length
+  tracer.addBlock('拓扑排序结束', [19, 20], {
+    result: hasCycle ? '图中存在环，无法完成拓扑排序' : `拓扑序列：${order.join(' -> ')}`,
+    highlightNodes: hasCycle ? state.vertices.filter((vertex) => !order.includes(vertex)) : order,
+    traversalOrder: order,
+  })
+  state.meta = {
+    ...(state.meta || {}),
+    topologicalOrder: order,
+    result: hasCycle ? '图中存在环，无法完成拓扑排序' : `拓扑序列：${order.join(' -> ')}`,
+  }
+  return { state, traces: tracer.done() }
+}
+
 function parseWeightedGraphInput(raw, fallback = 'A,B,C,D,E | A-B:4,A-C:7,A-B:4,A-C:7,B-D:5,B-E:3,C-D:2,D-E:6') {
   const text = String(raw ?? '').trim() || fallback
   const [verticesPart, edgesPart] = text.split('|').map((item) => item.trim())
@@ -2096,9 +2279,139 @@ function runGraphMst(action, rawInput, currentState) {
       result: `最小生成树总权值：${totalWeight}`,
       highlightNodes: state.vertices,
     })
+  }
+  return { state, traces: tracer.done() }
+}
+
+function runGraphShortestPath(action, rawInput, currentState) {
+  const state = ensureGraphState(currentState)
+  const tracer = makeTracer(state)
+  state.meta = { ...(state.meta || {}), actionKey: action.key }
+  const text = normalizeInput(rawInput, action.defaultInput)
+  const hasGraphPayload = text.includes('|')
+  const parsed = hasGraphPayload ? parseWeightedGraphInput(rawInput, action.defaultInput) : null
+
+  if (action.key === 'create') {
+    const created = parseWeightedGraphInput(text, action.defaultInput)
+    applyGraphData(state, {
+      vertices: created.vertices,
+      edges: created.edges.map((edge) => [edge.from, edge.to]),
+      weights: Object.fromEntries(created.edges.flatMap(({ from, to, weight }) => [
+        [`${from},${to}`, weight],
+        [`${to},${from}`, weight],
+      ])),
+    })
+    tracer.addBlock('读取顶点数组和带权边并创建图', [1, 3], {
+      result: `已创建 ${state.vertices.length} 个顶点、${state.edges.length} 条带权边`,
+      highlightNodes: state.vertices,
+    })
+    tracer.addBlock('同步生成带权邻接矩阵', [4, 5], {
+      result: `顶点数组：${state.vertices.join(' -> ')}`,
+      highlightNodes: state.vertices,
+    })
+    return { state, traces: tracer.done() }
+  }
+
+  if (action.key === 'random') {
+    const randomGraph = createRandomGraphData(parseSingleNumber(text, 5), true)
+    applyGraphData(state, randomGraph)
+    tracer.addBlock('随机生成带权图的顶点数组', [1, 3], {
+      result: `随机得到 ${state.vertices.length} 个顶点`,
+      highlightNodes: state.vertices,
+    })
+    tracer.addBlock('补齐随机带权边并生成邻接矩阵', [4, 5], {
+      result: `当前共有 ${state.edges.length} 条带权边`,
+      highlightNodes: state.vertices,
+    })
+    return { state, traces: tracer.done() }
+  }
+
+  if (parsed) {
+    applyGraphData(state, {
+      vertices: parsed.vertices,
+      edges: parsed.edges.map((edge) => [edge.from, edge.to]),
+      weights: Object.fromEntries(parsed.edges.flatMap(({ from, to, weight }) => [
+        [`${from},${to}`, weight],
+        [`${to},${from}`, weight],
+      ])),
+    })
+  } else {
+    state.matrix = buildMatrix(state.vertices, state.edges, state.weights)
+    state.adjacency = buildAdjacency(state.vertices, state.edges)
+  }
+
+  const weightedEdges = parsed?.edges || weightedEdgesFromState(state)
+  tracer.addBlock('读取带权图数据', [6, 7], {
+    result: `顶点数 ${state.vertices.length}，边数 ${weightedEdges.length}`,
+    highlightNodes: state.vertices,
+  })
+
+  if (action.key === 'dijkstra') {
+    const requestedStart = hasGraphPayload ? state.vertices[0] : text
+    const start = state.vertices.includes(requestedStart) ? requestedStart : state.vertices[0]
+    const graph = Object.fromEntries(state.vertices.map((vertex) => [vertex, []]))
+    weightedEdges.forEach(({ from, to, weight }) => {
+      graph[from]?.push({ to, weight })
+      graph[to]?.push({ to: from, weight })
+    })
+    const dist = Object.fromEntries(state.vertices.map((vertex) => [vertex, Number.POSITIVE_INFINITY]))
+    const prev = Object.fromEntries(state.vertices.map((vertex) => [vertex, null]))
+    const visited = new Set()
+    dist[start] = 0
+    tracer.addBlock(`Dijkstra 算法：从顶点 ${start} 开始`, [8, 10], {
+      result: `初始化 dist[${start}] = 0，其余为 ∞`,
+      highlightNodes: [start],
+    })
+    while (visited.size < state.vertices.length) {
+      let current = null
+      let best = Number.POSITIVE_INFINITY
+      state.vertices.forEach((vertex) => {
+        if (!visited.has(vertex) && dist[vertex] < best) {
+          current = vertex
+          best = dist[vertex]
+        }
+      })
+      if (!current) break
+      visited.add(current)
+      tracer.addBlock(`选定当前未访问最短顶点 ${current}`, [11, 12], {
+        result: `${current} 的当前最短距离为 ${dist[current]}`,
+        highlightNodes: [current],
+        traversalOrder: [...visited],
+      })
+      ;(graph[current] || []).forEach(({ to, weight }) => {
+        if (visited.has(to)) {
+          tracer.addBlock(`检查边 ${current}-${to}，${to} 已确定最短距离`, [13, 14], {
+            result: `${to} 已访问，跳过`,
+            highlightNodes: [current, to],
+            highlightEdges: [[current, to]],
+            traversalOrder: [...visited],
+          })
+          return
+        }
+        const candidate = dist[current] + weight
+        const improved = candidate < dist[to]
+        tracer.addBlock(`松弛边 ${current}-${to}，权值 ${weight}`, [15, 18], {
+          result: improved
+            ? `dist[${to}]：${Number.isFinite(dist[to]) ? dist[to] : '∞'} → ${candidate}`
+            : `dist[${to}] 保持 ${Number.isFinite(dist[to]) ? dist[to] : '∞'}`,
+          highlightNodes: [current, to],
+          highlightEdges: [[current, to]],
+          traversalOrder: [...visited],
+        })
+        if (improved) {
+          dist[to] = candidate
+          prev[to] = current
+        }
+      })
+    }
+    state.meta = { ...(state.meta || {}), shortestDistances: dist, previous: prev }
+    tracer.addBlock('Dijkstra 算法结束', [19, 20], {
+      result: Object.entries(dist).map(([vertex, value]) => `${start}->${vertex}:${Number.isFinite(value) ? value : '∞'}`).join('，'),
+      highlightNodes: [...visited],
+      traversalOrder: [...visited],
+    })
   } else if (action.key === 'floyd') {
     const size = state.vertices.length
-    const indexMap = Object.fromEntries(state.vertices.map((vertex, index) => [vertex, index]))
     const dist = Array.from({ length: size }, (_, row) =>
       Array.from({ length: size }, (_, col) => {
         if (row === col) return 0
@@ -2142,8 +2455,10 @@ function runGraphMst(action, rawInput, currentState) {
       highlightCells: state.vertices.flatMap((_, row) => state.vertices.map((__, col) => [row, col])),
     })
   }
+
   return { state, traces: tracer.done() }
 }
+
 function ensureLinearData(state, fallback = '35,12,48,7,26') {
   if (!state.items.length) state.items = parseNumberList(fallback, fallback)
 }
@@ -2532,7 +2847,7 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
       })
       state.items[index] = newVal
       tracer.addBlock(`将第 ${pos} 个位置的 ${oldVal} 替换为 ${newVal}`, [12, 13], {
-        result: `修改成功，第 ${pos} 个位置的新值为 ${newVal}`,
+        result: `已将序号 ${pos} 的元素修改为 ${newVal}`,
         highlightIndices: [index],
         pointers: [makePointer(index, 'new', '#22c55e')],
       })
@@ -4309,6 +4624,10 @@ export function runOperation({ page, action, input, state, capacity, mode }) {
       return runGraphTraversal(action, input, state)
     case 'graph-mst':
       return runGraphMst(action, input, state)
+    case 'graph-topological':
+      return runGraphTopological(action, input, state)
+    case 'graph-shortest-path':
+      return runGraphShortestPath(action, input, state)
     case 'linear-list':
     case 'linear-list-basic':
     case 'linear-list-sort':

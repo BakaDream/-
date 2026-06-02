@@ -626,14 +626,14 @@ const graphWeights = computed(() => props.state?.weights || {})
 const graphActionKey = computed(() => props.state?.meta?.actionKey || '')
 const showVertexPanel = computed(() => props.page.key.startsWith('graph-'))
 const showMatrixPanel = computed(() => {
-  if (props.page.key === 'graph-matrix' || props.page.key === 'graph-mst') return true
+  if (props.page.key === 'graph-matrix' || props.page.key === 'graph-mst' || props.page.key === 'graph-shortest-path') return true
   if (props.page.key === 'graph-list') return false
   if (props.page.key === 'graph-traversal') return ['create', 'random', 'matrix-dfs', 'matrix-bfs'].includes(graphActionKey.value)
   return false
 })
 const showAdjacencyPanel = computed(() => {
-  if (props.page.key === 'graph-list') return true
-  if (props.page.key === 'graph-matrix' || props.page.key === 'graph-mst') return false
+  if (props.page.key === 'graph-list' || props.page.key === 'graph-topological') return true
+  if (props.page.key === 'graph-matrix' || props.page.key === 'graph-mst' || props.page.key === 'graph-shortest-path') return false
   if (props.page.key === 'graph-traversal') return ['create', 'random', 'dfs', 'bfs'].includes(graphActionKey.value)
   return false
 })

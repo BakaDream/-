@@ -475,6 +475,8 @@ const pages = [
       makeAction('update-matrix', '更新矩阵元素', { placeholder: '输入行,列,权值，如 0,2,6；权值0表示删除边', defaultInput: '0,2,6', codeTemplate: 'graph-update-matrix' }),
       makeAction('query-vertex', '查询顶点', { placeholder: '输入顶点，如 A', defaultInput: 'A', codeTemplate: 'graph-update-matrix' }),
       makeAction('query-edge', '查询边', { placeholder: '输入起点,终点，如 A,D', defaultInput: 'A,D', codeTemplate: 'graph-update-matrix' }),
+      makeAction('matrix-dfs', '邻接矩阵 DFS', { placeholder: '输入起始顶点，如 A', defaultInput: 'A', codeTemplate: 'graph-dfs' }),
+      makeAction('matrix-bfs', '邻接矩阵 BFS', { placeholder: '输入起始顶点，如 A', defaultInput: 'A', codeTemplate: 'graph-bfs' }),
     ],
   },
   {
@@ -497,6 +499,8 @@ const pages = [
       makeAction('update-list', '更新邻接表项', { placeholder: '输入顶点,邻居,权值，如 A,D,6；权值0表示删除边', defaultInput: 'A,D,6', codeTemplate: 'graph-update-list' }),
       makeAction('query-vertex', '查询顶点', { placeholder: '输入顶点，如 A', defaultInput: 'A', codeTemplate: 'graph-update-list' }),
       makeAction('query-edge', '查询边', { placeholder: '输入起点,终点，如 A,D', defaultInput: 'A,D', codeTemplate: 'graph-update-list' }),
+      makeAction('list-dfs', '邻接表 DFS', { placeholder: '输入起始顶点，如 A', defaultInput: 'A', codeTemplate: 'graph-dfs' }),
+      makeAction('list-bfs', '邻接表 BFS', { placeholder: '输入起始顶点，如 A', defaultInput: 'A', codeTemplate: 'graph-bfs' }),
     ],
   },
   {
@@ -508,6 +512,7 @@ const pages = [
     category: '图',
     description: '图遍历时同步展示图、邻接矩阵和邻接表的访问过程。',
     visualType: 'graph',
+    hideFromNav: true,
     actions: [
       makeAction('create', '创建图', { placeholder: '输入顶点|带权边，如 A,B,C,D | A-B:2,A-C:5,B-D:3,C-D:4', defaultInput: 'A,B,C,D | A-B:2,A-C:5,B-D:3,C-D:4', codeTemplate: 'graph-create' }),
       makeAction('random', '随机生成图', { placeholder: '可选输入顶点数，如 5', defaultInput: '5', codeTemplate: 'graph-random' }),
@@ -524,7 +529,7 @@ const pages = [
     groupKey: 'graph',
     title: '图 - 最小生成树',
     category: '图',
-    description: '使用带权图演示创建图、随机建图、Prim、Kruskal、Boruvka 和 Floyd 算法。',
+    description: '使用带权图演示创建图、随机建图、Prim、Kruskal 和 Boruvka 算法。',
     visualType: 'graph',
     actions: [
       makeAction('create', '创建图', { placeholder: '输入顶点|带权边，如 A,B,C,D,E | A-B:4,A-C:7,B-D:5,B-E:3,C-D:2,D-E:6', defaultInput: 'A,B,C,D,E | A-B:4,A-C:7,B-D:5,B-E:3,C-D:2,D-E:6', codeTemplate: 'graph-create' }),
@@ -532,6 +537,36 @@ const pages = [
       makeAction('prim', 'Prim 算法', { placeholder: '输入起始顶点，如 A；也可直接输入完整带权图', defaultInput: 'A', codeTemplate: 'graph-prim' }),
       makeAction('kruskal', 'Kruskal 算法', { placeholder: '无需输入；也可直接输入完整带权图', defaultInput: '', codeTemplate: 'graph-kruskal' }),
       makeAction('boruvka', 'Boruvka 算法', { placeholder: '无需输入；也可直接输入完整带权图', defaultInput: '', codeTemplate: 'graph-kruskal' }),
+    ],
+  },
+  {
+    key: 'graph-topological',
+    path: '/graph/topological-sort',
+    name: 'graph-topological',
+    groupKey: 'graph',
+    title: '图 - 拓扑排序',
+    category: '图',
+    description: '有向图的拓扑排序演示，展示入度统计、零入度队列、出队访问和入度更新过程。',
+    visualType: 'graph',
+    actions: [
+      makeAction('create', '创建有向图', { placeholder: '输入顶点|有向边，如 A,B,C,D,E | A-B,A-C,B-D,C-D,D-E', defaultInput: 'A,B,C,D,E | A-B,A-C,B-D,C-D,D-E', codeTemplate: 'graph-create-directed' }),
+      makeAction('random', '随机生成 DAG', { placeholder: '可选输入顶点数，如 5', defaultInput: '5', codeTemplate: 'graph-random-directed' }),
+      makeAction('topological-sort', '拓扑排序', { placeholder: '无需输入；也可直接输入完整有向图', defaultInput: '', codeTemplate: 'graph-topological-sort' }),
+    ],
+  },
+  {
+    key: 'graph-shortest-path',
+    path: '/graph/shortest-path',
+    name: 'graph-shortest-path',
+    groupKey: 'graph',
+    title: '图 - 最短路径',
+    category: '图',
+    description: '带权图的最短路径演示，支持单源 Dijkstra 和所有点对 Floyd 算法。',
+    visualType: 'graph',
+    actions: [
+      makeAction('create', '创建带权图', { placeholder: '输入顶点|带权边，如 A,B,C,D,E | A-B:4,A-C:7,B-D:5,B-E:3,C-D:2,D-E:6', defaultInput: 'A,B,C,D,E | A-B:4,A-C:7,B-D:5,B-E:3,C-D:2,D-E:6', codeTemplate: 'graph-create' }),
+      makeAction('random', '随机生成带权图', { placeholder: '可选输入顶点数，如 5', defaultInput: '5', codeTemplate: 'graph-random' }),
+      makeAction('dijkstra', 'Dijkstra 算法', { placeholder: '输入起始顶点，如 A；也可直接输入完整带权图', defaultInput: 'A', codeTemplate: 'graph-dijkstra' }),
       makeAction('floyd', 'Floyd 算法', { placeholder: '无需输入；也可直接输入完整带权图', defaultInput: '', codeTemplate: 'graph-floyd' }),
     ],
   },
@@ -578,7 +613,7 @@ export const navigationGroups = [
     key: 'graph',
     label: '图',
     icon: '图',
-    items: pages.filter((page) => page.groupKey === 'graph'),
+    items: pages.filter((page) => page.groupKey === 'graph' && !page.hideFromNav),
   },
 ]
 

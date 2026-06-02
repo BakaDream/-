@@ -2033,95 +2033,40 @@ const detailedBodies = {
     ]),
   'list-update': makeBody(
     [
-      '# 更新顺序表元素',
-      '# 修改指定位置的元素值',
-      '# 时间复杂度: O(1)',
-      '',
-      'def list_update(seq_list, index, new_value):',
-      '    """',
-      '    将顺序表第index个位置的元素更新为new_value',
-      '    :param seq_list: 顺序表',
-      '    :param index: 位置',
-      '    :param new_value: 新的值',
-      '    :return: 原来的值',
-      '    """',
-      '    n = len(seq_list)',
-      '    if n == 0:',
-      '        raise ValueError("顺序表为空")',
-      '    ',
-      '    # 规范化索引',
-      '    index = max(0, min(index, n - 1))',
-      '    ',
-      '    # 保存原值',
-      '    old_value = seq_list[index]',
-      '    ',
-      '    # 直接修改',
-      '    seq_list[index] = new_value',
-      '    ',
-      '    return old_value',
-      '',
       'n = len(state.get("items", []))',
       'if n == 0:',
       '    state["meta"]["result"] = "顺序表为空"',
       '    return state',
-      'pos_raw, new_val = parse_pair(raw_input)',
-      'pos = max(0, min(pos_raw, n - 1))',
-      'old_val = list_update(state["items"], pos, new_val)',
-      'state["meta"]["result"] = f"将位置 {pos} 的 {old_val} 更新为 {new_val}"',
+      'display_no, new_val = parse_pair(raw_input)',
+      '# 显示序号与页面上方序号一致，内部下标 = 显示序号 - 1',
+      'display_no = max(1, min(display_no, n))',
+      'index = display_no - 1',
+      'old_val = state["items"][index]',
+      'state["items"][index] = new_val',
+      'state["meta"]["result"] = f"已将序号 {display_no} 的元素修改为 {new_val}"',
     ],
     [
-      '// 更新顺序表元素',
-      '// 直接通过下标修改元素值',
-      '// 时间复杂度: O(1)',
-      '',
-      'int listUpdate(std::vector<int>& seqList, int index, int newValue) {',
-      '    int n = seqList.size();',
-      '    if (n == 0) throw std::runtime_error("顺序表为空");',
-      '    ',
-      '    // 规范化索引',
-      '    index = std::max(0, std::min(index, (int)n - 1));',
-      '    ',
-      '    // 保存原值并更新',
-      '    int oldValue = seqList[index];',
-      '    seqList[index] = newValue;',
-      '    ',
-      '    return oldValue;',
-      '}',
-      '',
-      'void listUpdate(State& state, const std::string& rawInput) {',
-      '    int n = state.items.size();',
-      '    if (n == 0) {',
-      '        state.meta.result = "顺序表为空";',
-      '        return;',
-      '    }',
-      '    auto [posRaw, newVal] = parsePair(rawInput);',
-      '    int pos = std::max(0, std::min(posRaw, (int)n - 1));',
-      '    int oldVal = listUpdate(state.items, pos, newVal);',
-      '    state.meta.result = "更新位置 " + std::to_string(pos) + " 的 " +',
-      '                       std::to_string(oldVal) + " 为 " + std::to_string(newVal);',
-      '}',
+      'int n = state.items.size();',
+      'if (n == 0) { state.meta.result = "顺序表为空"; return; }',
+      'auto [displayNoRaw, newVal] = parsePair(rawInput);',
+      'int displayNo = std::max(1, std::min(displayNoRaw, n));',
+      '// 显示序号与页面序号一致，内部下标 = 显示序号 - 1',
+      'int index = displayNo - 1;',
+      'int oldVal = state.items[index];',
+      'state.items[index] = newVal;',
+      'state.meta.result = "已将序号 " + std::to_string(displayNo) +',
+      '                    " 的元素修改为 " + std::to_string(newVal);',
     ],
     [
-      '// 更新顺序表元素',
-      '// ArrayList的set方法直接替换元素',
-      '',
-      'public void listUpdate(State state, String rawInput) {',
-      '    int n = state.items.size();',
-      '    if (n == 0) {',
-      '        state.meta.result = "顺序表为空";',
-      '        return;',
-      '    }',
-      '    ',
-      '    int[] params = parsePair(rawInput);',
-      '    int posRaw = params[0];',
-      '    int newVal = params[1];',
-      '    int pos = Math.max(0, Math.min(posRaw, n - 1));',
-      '    ',
-      '    // set方法直接替换，返回原值',
-      '    int oldVal = state.items.set(pos, newVal);',
-      '    ',
-      '    state.meta.result = "将位置 " + pos + " 的 " + oldVal + " 更新为 " + newVal;',
-      '}',
+      'int n = state.items.size();',
+      'if (n == 0) { state.meta.result = "顺序表为空"; return; }',
+      'int[] params = parsePair(rawInput);',
+      'int displayNo = Math.max(1, Math.min(params[0], n));',
+      '// 显示序号与页面序号一致，内部下标 = 显示序号 - 1',
+      'int index = displayNo - 1;',
+      'int newVal = params[1];',
+      'state.items.set(index, newVal);',
+      'state.meta.result = "已将序号 " + displayNo + " 的元素修改为 " + newVal;',
     ]),
   'list-random': makeBody(
     [
@@ -12120,7 +12065,7 @@ function buildFallbackBody(page, action) {
     )
   }
 
-  if (page.key === 'graph-mst' && ['create', 'random', 'floyd'].includes(action.key)) {
+  if (page.key === 'graph-mst' && ['create', 'random'].includes(action.key)) {
     const mstBodyMap = {
       create: makeBody(
         ['payload = parse_weighted_graph(raw_input)', 'state["vertices"] = payload["vertices"]', 'state["edges"] = payload["edges"]', 'state["matrix"] = build_weighted_matrix(payload)', `state["meta"]["result"] = "${action.label}完成"`],
@@ -12134,14 +12079,62 @@ function buildFallbackBody(page, action) {
         ['var payload = buildRandomWeightedGraph(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildWeightedMatrix(payload);', `state.meta.result = "${action.label}完成";`],
         ['const payload = buildRandomWeightedGraph(rawInput)', 'state.vertices = payload.vertices', 'state.edges = payload.edges', 'state.matrix = buildWeightedMatrix(payload)', `state.meta.result = "${action.label}完成"`],
       ),
-      floyd: makeBody(
-        ['dist = init_dist_matrix(state)', 'for k in range(len(dist)):', '    for i in range(len(dist)):', '        for j in range(len(dist)):', '            dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])', 'state["matrix"] = dist', 'state["meta"]["result"] = "Floyd 最短路径计算完成"'],
-        ['auto dist = initDistMatrix(state);', 'for (int k = 0; k < state.vertices.size(); ++k) {', '    for (int i = 0; i < state.vertices.size(); ++i) {', '        for (int j = 0; j < state.vertices.size(); ++j) {', '            dist[i][j] = std::min(dist[i][j], dist[i][k] + dist[k][j]);', '        }', '    }', '}', 'state.matrix = dist;', 'state.meta.result = "Floyd 最短路径计算完成";'],
-        ['var dist = initDistMatrix(state);', 'for (int k = 0; k < state.vertices.size(); k++) {', '    for (int i = 0; i < state.vertices.size(); i++) {', '        for (int j = 0; j < state.vertices.size(); j++) {', '            dist[i][j] = Math.min(dist[i][j], dist[i][k] + dist[k][j]);', '        }', '    }', '}', 'state.matrix = dist;', 'state.meta.result = "Floyd 最短路径计算完成";'],
-        ['const dist = initDistMatrix(state)', 'for (let k = 0; k < state.vertices.length; k += 1) {', '  for (let i = 0; i < state.vertices.length; i += 1) {', '    for (let j = 0; j < state.vertices.length; j += 1) {', '      dist[i][j] = Math.min(dist[i][j], dist[i][k] + dist[k][j])', '    }', '  }', '}', 'state.matrix = dist', 'state.meta.result = "Floyd 最短路径计算完成"'],
-      ),
     }
     if (mstBodyMap[action.key]) return mstBodyMap[action.key]
+  }
+
+  if (page.key === 'graph-topological') {
+    const topoMap = {
+      create: makeBody(
+        ['payload = parse_directed_graph(raw_input)', 'state["vertices"] = payload["vertices"]', 'state["edges"] = payload["edges"]', 'state["matrix"] = build_directed_matrix(payload)', 'state["adjacency"] = build_directed_adjacency(payload)', 'state["meta"]["result"] = "有向图创建完成"'],
+        ['auto payload = parseDirectedGraph(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildDirectedMatrix(payload);', 'state.adjacency = buildDirectedAdjacency(payload);', 'state.meta.result = "有向图创建完成";'],
+        ['var payload = parseDirectedGraph(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildDirectedMatrix(payload);', 'state.adjacency = buildDirectedAdjacency(payload);', 'state.meta.result = "有向图创建完成";'],
+        ['const payload = parseDirectedGraph(rawInput)', 'state.vertices = payload.vertices', 'state.edges = payload.edges', 'state.matrix = buildDirectedMatrix(payload)', 'state.adjacency = buildDirectedAdjacency(payload)', 'state.meta.result = "有向图创建完成"'],
+      ),
+      random: makeBody(
+        ['payload = build_random_dag(raw_input)', 'state["vertices"] = payload["vertices"]', 'state["edges"] = payload["edges"]', 'state["matrix"] = build_directed_matrix(payload)', 'state["adjacency"] = build_directed_adjacency(payload)', 'state["meta"]["result"] = "随机 DAG 生成完成"'],
+        ['auto payload = buildRandomDag(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildDirectedMatrix(payload);', 'state.adjacency = buildDirectedAdjacency(payload);', 'state.meta.result = "随机 DAG 生成完成";'],
+        ['var payload = buildRandomDag(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildDirectedMatrix(payload);', 'state.adjacency = buildDirectedAdjacency(payload);', 'state.meta.result = "随机 DAG 生成完成";'],
+        ['const payload = buildRandomDag(rawInput)', 'state.vertices = payload.vertices', 'state.edges = payload.edges', 'state.matrix = buildDirectedMatrix(payload)', 'state.adjacency = buildDirectedAdjacency(payload)', 'state.meta.result = "随机 DAG 生成完成"'],
+      ),
+      'topological-sort': makeBody(
+        ['indegree = {v: 0 for v in vertices}', 'for u, v in edges:', '    indegree[v] += 1', 'queue = [v for v in vertices if indegree[v] == 0]', 'order = []', 'while queue:', '    u = queue.pop(0)', '    order.append(u)', '    for v in adjacency[u]:', '        indegree[v] -= 1', '        if indegree[v] == 0: queue.append(v)', 'state["meta"]["result"] = "存在环" if len(order) < len(vertices) else f"拓扑序列: {order}"'],
+        ['std::map<char,int> indegree;', 'for (auto edge : edges) indegree[edge.to]++;', 'std::queue<char> q;', 'for (auto v : vertices) if (indegree[v] == 0) q.push(v);', 'std::vector<char> order;', 'while (!q.empty()) {', '    char u = q.front(); q.pop();', '    order.push_back(u);', '    for (auto v : adjacency[u]) {', '        if (--indegree[v] == 0) q.push(v);', '    }', '}', 'state.meta.result = order.size() == vertices.size() ? "拓扑排序完成" : "图中存在环";'],
+        ['Map<String,Integer> indegree = new HashMap<>();', 'for (Edge edge : edges) indegree.put(edge.to, indegree.get(edge.to) + 1);', 'Queue<String> queue = new LinkedList<>();', 'for (String v : vertices) if (indegree.get(v) == 0) queue.offer(v);', 'List<String> order = new ArrayList<>();', 'while (!queue.isEmpty()) {', '    String u = queue.poll();', '    order.add(u);', '    for (String v : adjacency.get(u)) {', '        indegree.put(v, indegree.get(v) - 1);', '        if (indegree.get(v) == 0) queue.offer(v);', '    }', '}', 'state.meta.result = order.size() == vertices.size() ? "拓扑排序完成" : "图中存在环";'],
+        ['const indegree = Object.fromEntries(vertices.map(v => [v, 0]))', 'for (const [u, v] of edges) indegree[v] += 1', 'const queue = vertices.filter(v => indegree[v] === 0)', 'const order = []', 'while (queue.length) {', '  const u = queue.shift()', '  order.push(u)', '  for (const v of adjacency[u]) {', '    indegree[v] -= 1', '    if (indegree[v] === 0) queue.push(v)', '  }', '}', 'state.meta.result = order.length === vertices.length ? `拓扑序列: ${order.join(" -> ")}` : "图中存在环"'],
+      ),
+    }
+    if (topoMap[action.key]) return topoMap[action.key]
+  }
+
+  if (page.key === 'graph-shortest-path') {
+    const shortestMap = {
+      create: makeBody(
+        ['payload = parse_weighted_graph(raw_input)', 'state["vertices"] = payload["vertices"]', 'state["edges"] = payload["edges"]', 'state["matrix"] = build_weighted_matrix(payload)', 'state["meta"]["result"] = "带权图创建完成"'],
+        ['auto payload = parseWeightedGraph(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildWeightedMatrix(payload);', 'state.meta.result = "带权图创建完成";'],
+        ['var payload = parseWeightedGraph(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildWeightedMatrix(payload);', 'state.meta.result = "带权图创建完成";'],
+        ['const payload = parseWeightedGraph(rawInput)', 'state.vertices = payload.vertices', 'state.edges = payload.edges', 'state.matrix = buildWeightedMatrix(payload)', 'state.meta.result = "带权图创建完成"'],
+      ),
+      random: makeBody(
+        ['payload = build_random_weighted_graph(raw_input)', 'state["vertices"] = payload["vertices"]', 'state["edges"] = payload["edges"]', 'state["matrix"] = build_weighted_matrix(payload)', 'state["meta"]["result"] = "随机带权图生成完成"'],
+        ['auto payload = buildRandomWeightedGraph(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildWeightedMatrix(payload);', 'state.meta.result = "随机带权图生成完成";'],
+        ['var payload = buildRandomWeightedGraph(rawInput);', 'state.vertices = payload.vertices;', 'state.edges = payload.edges;', 'state.matrix = buildWeightedMatrix(payload);', 'state.meta.result = "随机带权图生成完成";'],
+        ['const payload = buildRandomWeightedGraph(rawInput)', 'state.vertices = payload.vertices', 'state.edges = payload.edges', 'state.matrix = buildWeightedMatrix(payload)', 'state.meta.result = "随机带权图生成完成"'],
+      ),
+      dijkstra: makeBody(
+        ['dist = {v: float("inf") for v in vertices}', 'prev = {v: None for v in vertices}', 'dist[start] = 0', 'visited = set()', 'while len(visited) < len(vertices):', '    u = min((v for v in vertices if v not in visited), key=lambda v: dist[v])', '    visited.add(u)', '    for v, w in adjacency[u]:', '        if dist[u] + w < dist[v]:', '            dist[v] = dist[u] + w', '            prev[v] = u', 'state["meta"]["result"] = f"最短距离: {dist}"'],
+        ['std::map<char,int> dist;', 'std::map<char,char> prev;', 'std::set<char> visited;', 'dist[start] = 0;', 'while (visited.size() < vertices.size()) {', '    char u = findNearestUnvisited(dist, visited);', '    visited.insert(u);', '    for (auto edge : adjacency[u]) {', '        if (dist[u] + edge.weight < dist[edge.to]) {', '            dist[edge.to] = dist[u] + edge.weight;', '            prev[edge.to] = u;', '        }', '    }', '}', 'state.meta.result = "Dijkstra 最短路径完成";'],
+        ['Map<String,Integer> dist = initDistance(vertices);', 'Map<String,String> prev = new HashMap<>();', 'Set<String> visited = new HashSet<>();', 'dist.put(start, 0);', 'while (visited.size() < vertices.size()) {', '    String u = findNearestUnvisited(dist, visited);', '    visited.add(u);', '    for (Edge edge : adjacency.get(u)) {', '        if (dist.get(u) + edge.weight < dist.get(edge.to)) {', '            dist.put(edge.to, dist.get(u) + edge.weight);', '            prev.put(edge.to, u);', '        }', '    }', '}', 'state.meta.result = "Dijkstra 最短路径完成";'],
+        ['const dist = Object.fromEntries(vertices.map(v => [v, Infinity]))', 'const prev = Object.fromEntries(vertices.map(v => [v, null]))', 'const visited = new Set()', 'dist[start] = 0', 'while (visited.size < vertices.length) {', '  const u = findNearestUnvisited(dist, visited)', '  visited.add(u)', '  for (const edge of adjacency[u]) {', '    if (dist[u] + edge.weight < dist[edge.to]) {', '      dist[edge.to] = dist[u] + edge.weight', '      prev[edge.to] = u', '    }', '  }', '}', 'state.meta.result = `最短距离: ${JSON.stringify(dist)}`'],
+      ),
+      floyd: makeBody(
+        ['dist = init_dist_matrix(state)', 'for k in range(len(dist)):', '    for i in range(len(dist)):', '        for j in range(len(dist)):', '            if dist[i][k] + dist[k][j] < dist[i][j]:', '                dist[i][j] = dist[i][k] + dist[k][j]', 'state["matrix"] = dist', 'state["meta"]["result"] = "Floyd 最短路径计算完成"'],
+        ['auto dist = initDistMatrix(state);', 'for (int k = 0; k < n; ++k) {', '    for (int i = 0; i < n; ++i) {', '        for (int j = 0; j < n; ++j) {', '            if (dist[i][k] + dist[k][j] < dist[i][j]) dist[i][j] = dist[i][k] + dist[k][j];', '        }', '    }', '}', 'state.matrix = dist;', 'state.meta.result = "Floyd 最短路径计算完成";'],
+        ['int[][] dist = initDistMatrix(state);', 'for (int k = 0; k < n; k++) {', '    for (int i = 0; i < n; i++) {', '        for (int j = 0; j < n; j++) {', '            if (dist[i][k] + dist[k][j] < dist[i][j]) dist[i][j] = dist[i][k] + dist[k][j];', '        }', '    }', '}', 'state.matrix = dist;', 'state.meta.result = "Floyd 最短路径计算完成";'],
+        ['const dist = initDistMatrix(state)', 'for (let k = 0; k < dist.length; k += 1) {', '  for (let i = 0; i < dist.length; i += 1) {', '    for (let j = 0; j < dist.length; j += 1) {', '      if (dist[i][k] + dist[k][j] < dist[i][j]) dist[i][j] = dist[i][k] + dist[k][j]', '    }', '  }', '}', 'state.matrix = dist', 'state.meta.result = "Floyd 最短路径计算完成"'],
+      ),
+    }
+    if (shortestMap[action.key]) return shortestMap[action.key]
   }
 
   if (page.key === 'seq-stack') {
