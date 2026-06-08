@@ -2828,25 +2828,25 @@ function runLinearList(action, rawInput, currentState, capacityInput, pageKey = 
     case 'update':
     case 'list-update': {
       ensureLinearData(state)
-      const [posRaw, newVal] = parsePair(input, '1,0')
-      const pos = Math.max(1, Math.min(posRaw, state.items.length))
-      const index = pos - 1
+      const [posRaw, newVal] = parsePair(input, '2,0')
+      const index = clampLinearSlot(posRaw, Math.max(state.items.length - 1, 0))
+      const pos = index
       const oldVal = state.items[index]
-      tracer.addBlock(`准备修改第 ${pos} 个位置的元素`, [6, 7], { result: `目标位置第 ${pos} 个，旧值：${oldVal}，新值：${newVal}` })
+      tracer.addBlock(`准备修改显示序号 ${pos} 的元素`, [6, 7], { result: `目标显示序号 ${pos}，旧值：${oldVal}，新值：${newVal}` })
       for (let cursor = 0; cursor <= index; cursor += 1) {
-        tracer.addBlock(`扫描到第 ${cursor + 1} 个位置的元素 ${state.items[cursor]}`, [9, 10], {
-          result: cursor === index ? '定位到待修改元素' : `继续定位第 ${pos} 个位置`,
+        tracer.addBlock(`扫描到显示序号 ${cursor} 的元素 ${state.items[cursor]}`, [9, 10], {
+          result: cursor === index ? '定位到待修改元素' : `继续定位显示序号 ${pos}`,
           highlightIndices: [cursor],
           pointers: [makePointer(cursor, 'i', cursor === index ? '#22c55e' : '#ef4444')],
         })
       }
-      tracer.addBlock(`读取第 ${pos} 个位置的旧值 ${oldVal}`, [11, 12], {
+      tracer.addBlock(`读取显示序号 ${pos} 的旧值 ${oldVal}`, [11, 12], {
         result: `确认旧值为 ${oldVal}`,
         highlightIndices: [index],
         pointers: [makePointer(index, 'old', '#f59e0b')],
       })
       state.items[index] = newVal
-      tracer.addBlock(`将第 ${pos} 个位置的 ${oldVal} 替换为 ${newVal}`, [12, 13], {
+      tracer.addBlock(`将显示序号 ${pos} 的 ${oldVal} 替换为 ${newVal}`, [12, 13], {
         result: `已将序号 ${pos} 的元素修改为 ${newVal}`,
         highlightIndices: [index],
         pointers: [makePointer(index, 'new', '#22c55e')],
