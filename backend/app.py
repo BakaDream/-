@@ -1,12 +1,10 @@
 import sys
 import os
-from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, send_from_directory
-from flask_cors import CORS
-# 【新增】导入刚才写的 BST 蓝图
+from flask import Flask
+# 导入 BST 蓝图
 from algorithms.tree.bst import tree_bp
 from algorithms.tree.binary_tree import binary_tree_bp
 from algorithms.tree.avl import avl_bp
@@ -24,16 +22,7 @@ from algorithms.linear.stack import stack_bp
 from algorithms.linear.queue import queue_bp
 from ai_routes import ai_bp
 
-BASE_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BASE_DIR.parent
-FRONTEND_DIST_DIR = PROJECT_ROOT / "frontend" / "dist"
-
-app = Flask(
-    __name__,
-    static_folder=str(FRONTEND_DIST_DIR / "assets") if FRONTEND_DIST_DIR.exists() else None,
-    static_url_path="/assets",
-)
-CORS(app)
+app = Flask(__name__)
 
 # 注册所有蓝图
 app.register_blueprint(tree_bp)
@@ -50,31 +39,8 @@ app.register_blueprint(stack_bp)
 app.register_blueprint(queue_bp)
 app.register_blueprint(ai_bp)
 
-@app.route('/')
-def home():
-    if FRONTEND_DIST_DIR.exists():
-        return send_from_directory(FRONTEND_DIST_DIR, "index.html")
-    return "✅ 后端框架运行正常！前端静态资源未构建。"
 
-
-@app.route('/favicon.ico')
-def favicon():
-    if FRONTEND_DIST_DIR.exists():
-        return send_from_directory(FRONTEND_DIST_DIR, "favicon.ico")
-    return ("", 204)
-
-
-@app.route('/<path:path>')
-def spa_assets(path):
-    if not FRONTEND_DIST_DIR.exists():
-        return ("前端静态资源未构建。", 404)
-
-    target = FRONTEND_DIST_DIR / path
-    if target.exists() and target.is_file():
-        return send_from_directory(FRONTEND_DIST_DIR, path)
-
-    return send_from_directory(FRONTEND_DIST_DIR, "index.html")
-
-if __name__ == '__main__':
-    print("🚀 服务启动成功: http://localhost:5000")
-    app.run(debug=False, host="127.0.0.1", port=5000)
+# 使用 flask run 启动:
+#   cd backend && flask run --host=127.0.0.1 --port=5000
+# 或使用 gunicorn:
+#   cd backend && gunicorn -w 2 --preload -b 127.0.0.1:5000 app:app

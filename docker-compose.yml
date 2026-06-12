@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    expose:
+      - "5000"
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "23333:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./nginx-docker.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
