@@ -1,11 +1,12 @@
 import json
+import os
 from pathlib import Path
 from urllib import error, request
 
-AI_API_BASE_URL = "https://api.sbbbbbbbbb.xyz/v1"
-AI_API_KEY = "sk-oGCxua7Ne7B9smHOnYAhujtLIWIVxbn4fs64VtxccoQxAEHw"
-AI_MODEL = "gpt-5.4"
-TEMPERATURE = 0.7
+AI_API_BASE_URL = os.environ.get("AI_API_BASE_URL", "https://api.sbbbbbbbbb.xyz/v1")
+AI_API_KEY = os.environ.get("AI_API_KEY", "sk-oGCxua7Ne7B9smHOnYAhujtLIWIVxbn4fs64VtxccoQxAEHw")
+AI_MODEL = os.environ.get("AI_MODEL", "gpt-5.4")
+TEMPERATURE = float(os.environ.get("AI_TEMPERATURE", "0.7"))
 MAX_KNOWLEDGE_CHARS = 12000
 
 BASE_DIR = Path(__file__).resolve().parent

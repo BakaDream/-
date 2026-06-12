@@ -27,13 +27,26 @@ npm run build          # 产物在 frontend/dist/
 cd ..
 ```
 
-### 3. 启动服务
+### 3. 配置 AI 助手（可选）
+
+在项目根目录创建 `.env` 文件，按需覆盖以下变量：
+
+```bash
+# AI_API_BASE_URL=https://api.sbbbbbbbbb.xyz/v1
+# AI_API_KEY=sk-xxx
+# AI_MODEL=gpt-5.4
+# AI_TEMPERATURE=0.7
+```
+
+不创建 `.env` 则使用内置默认值。
+
+### 4. 启动服务
 
 ```bash
 docker compose up -d
 ```
 
-### 4. 验证
+### 5. 验证
 
 - 访问 `http://服务器IP:23333` → 前端页面
 - 访问 `http://服务器IP:23333/api/xxx` → 后端 API 响应

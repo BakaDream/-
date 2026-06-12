@@ -4,6 +4,11 @@ services:
     restart: unless-stopped
     expose:
       - "5000"
+    environment:
+      - AI_API_BASE_URL=${AI_API_BASE_URL:-https://api.sbbbbbbbbb.xyz/v1}
+      - AI_API_KEY=${AI_API_KEY:-sk-oGCxua7Ne7B9smHOnYAhujtLIWIVxbn4fs64VtxccoQxAEHw}
+      - AI_MODEL=${AI_MODEL:-gpt-5.4}
+      - AI_TEMPERATURE=${AI_TEMPERATURE:-0.7}
 
   nginx:
     image: nginx:alpine
