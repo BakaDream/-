@@ -5,6 +5,7 @@ services:
     expose:
       - "5000"
     environment:
+      - ENABLE_AI=${ENABLE_AI:-true}
       - AI_API_BASE_URL=${AI_API_BASE_URL:-https://api.sbbbbbbbbb.xyz/v1}
       - AI_API_KEY=${AI_API_KEY:-sk-oGCxua7Ne7B9smHOnYAhujtLIWIVxbn4fs64VtxccoQxAEHw}
       - AI_MODEL=${AI_MODEL:-gpt-5.4}

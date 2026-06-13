@@ -38,7 +38,13 @@
 打开地址：
 - frontend：http://localhost:5173
 - backend：http://localhost:5000
+- 配置接口：http://localhost:5000/api/config
 - AI 健康检查：http://localhost:5000/api/ai/health
+
+AI 开关：
+- 默认开启。
+- 如需关闭 AI，启动后端前设置环境变量 ENABLE_AI=false。
+- 关闭后前端不显示 AI 对话，后端 /api/ai/* 会拒绝使用。
 
 Windows 常见坑：
 - 不要把别的电脑上的 node_modules 直接复制过来。

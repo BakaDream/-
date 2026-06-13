@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask
+from flask import Flask, jsonify
 # 导入 BST 蓝图
 from algorithms.tree.bst import tree_bp
 from algorithms.tree.binary_tree import binary_tree_bp
@@ -21,8 +21,14 @@ from algorithms.linear.linear_search import linear_search_bp
 from algorithms.linear.stack import stack_bp
 from algorithms.linear.queue import queue_bp
 from ai_routes import ai_bp
+from app_config import get_public_config
 
 app = Flask(__name__)
+
+
+@app.get("/api/config")
+def app_public_config():
+    return jsonify(get_public_config())
 
 # 注册所有蓝图
 app.register_blueprint(tree_bp)

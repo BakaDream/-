@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 from urllib import error, request
 
+from app_config import is_ai_enabled
+
 AI_API_BASE_URL = os.environ.get("AI_API_BASE_URL", "https://api.sbbbbbbbbb.xyz/v1")
 AI_API_KEY = os.environ.get("AI_API_KEY", "sk-oGCxua7Ne7B9smHOnYAhujtLIWIVxbn4fs64VtxccoQxAEHw")
 AI_MODEL = os.environ.get("AI_MODEL", "gpt-5.4")
@@ -95,6 +97,9 @@ def build_messages(history_messages):
 
 
 def send_chat(messages):
+    if not is_ai_enabled():
+        raise RuntimeError("AI 功能已关闭")
+
     payload = {
         "model": AI_MODEL,
         "messages": messages,
@@ -129,6 +134,11 @@ def print_intro(history_messages):
 
 
 def main():
+    if not is_ai_enabled():
+        print("AI 功能已关闭。请设置 ENABLE_AI=true 后再使用。")
+        input("\n回车退出...")
+        return
+
     if not AI_API_BASE_URL or not AI_API_KEY or not AI_MODEL:
         print("Base URL / API Key / 模型名不能为空。")
         input("\n回车退出...")

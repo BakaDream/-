@@ -32,13 +32,14 @@ cd ..
 在项目根目录创建 `.env` 文件，按需覆盖以下变量：
 
 ```bash
+# ENABLE_AI=true
 # AI_API_BASE_URL=https://api.sbbbbbbbbb.xyz/v1
 # AI_API_KEY=sk-xxx
 # AI_MODEL=gpt-5.4
 # AI_TEMPERATURE=0.7
 ```
 
-不创建 `.env` 则使用内置默认值。
+不创建 `.env` 则使用内置默认值。`ENABLE_AI=false` 时前端不显示 AI 助手，后端 `/api/ai/*` 也会拒绝使用。
 
 ### 4. 启动服务
 

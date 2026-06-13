@@ -87,17 +87,19 @@
       <RouterView />
     </main>
 
-    <FloatingAiAssistant />
+    <FloatingAiAssistant v-if="appConfig.enableAi" />
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import FloatingAiAssistant from '../components/FloatingAiAssistant.vue'
 import { navigationGroups } from '../data/algorithmCatalog'
+import { useAppConfigStore } from '../stores/appConfig'
 
 const route = useRoute()
+const appConfig = useAppConfigStore()
 const openGroups = ref(new Set(navigationGroups.map((group) => group.key)))
 const defaultSubgroups = navigationGroups
   .flatMap((group) => group.items.filter((item) => item.children).map((item) => item.key))
@@ -133,6 +135,10 @@ function toggleSubgroup(key) {
   else next.add(key)
   openSubgroups.value = next
 }
+
+onMounted(() => {
+  appConfig.loadConfig()
+})
 </script>
 
 <style scoped>

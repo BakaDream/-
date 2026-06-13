@@ -13,6 +13,7 @@ from minimal_ai_chat import (
     build_knowledge_text,
     read_text_file,
 )
+from app_config import is_ai_enabled
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
 
@@ -27,6 +28,12 @@ CONTEXT_FIELDS = [
     "statusText",
     "resultText",
 ]
+
+
+@ai_bp.before_request
+def require_ai_enabled():
+    if not is_ai_enabled():
+        return jsonify({"error": "AI 功能已关闭", "enableAi": False}), 403
 
 
 def clean_text(value):

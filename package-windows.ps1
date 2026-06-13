@@ -75,6 +75,8 @@ $readme = @'
 - 不需要 Node.js
 - 不需要手动装前端依赖
 - 发布包内保留了 frontend 源码和 dist 静态产物
+- AI 默认开启；如需关闭，请在启动前设置环境变量 ENABLE_AI=false
+- 关闭后前端不显示 AI 对话，后端 /api/ai/* 会拒绝使用
 '@
 
 Set-Content -LiteralPath (Join-Path $PackageDir "使用说明.txt") -Value $readme -Encoding UTF8
